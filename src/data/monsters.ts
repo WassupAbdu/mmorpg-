@@ -1247,7 +1247,7 @@ export const MONSTERS: Record<MonsterType, MonsterDefinition> = {
     aggroRange: 12,
     aiStrategy: 'balanced',
     spells: ['war_2', 'sor_7'],
-    abilities: ['Non-vivant', 'Résistance nécroti que'],
+    abilities: ['Non-vivant', 'Résistance nécrotique'],
     experienceReward: 140,
     lootTable: [
       { itemId: 'cursed_bone', dropChance: 0.6 },
