@@ -83,7 +83,7 @@ class SocketManager {
   }
 
   isConnected(): boolean {
-    return this.socket?.connected && this.authenticated || false;
+    return (this.socket?.connected && this.authenticated) || false;
   }
 }
 

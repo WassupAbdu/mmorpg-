@@ -79,7 +79,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
     res.status(201).json(guild);
   } catch (error: any) {
     if (error.code === 11000) {
-      return res.status(400).json({ error: 'Guild name or tag already exists' });
+      const field = error.keyPattern?.name ? 'name' : 'tag';
+      return res.status(400).json({ error: `Guild ${field} already exists. Please choose a different ${field}.` });
     }
     res.status(500).json({ error: 'Failed to create guild' });
   }

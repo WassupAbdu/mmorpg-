@@ -188,7 +188,17 @@ export const useMultiplayerStore = create<MultiplayerState>((set, get) => ({
   },
   
   sendMessage: (channel: string, message: string, characterName: string) => {
-    socketManager.emit('chat:message', { channel, message, characterName });
+    // Validate message length
+    if (message.length > 500) {
+      console.warn('Message too long, truncating to 500 characters');
+      message = message.substring(0, 500);
+    }
+    
+    if (message.trim().length === 0) {
+      return;
+    }
+    
+    socketManager.emit('chat:message', { channel, message: message.trim(), characterName });
   },
   
   sendWhisper: (targetCharacterId: string, message: string, characterName: string) => {

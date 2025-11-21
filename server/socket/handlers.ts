@@ -8,6 +8,8 @@ interface ConnectedUser {
   position: { x: number; z: number; mapId: string };
 }
 
+// NOTE: For production with multiple server instances, replace these in-memory Maps
+// with Redis or a distributed cache to share state across servers
 const connectedUsers = new Map<string, ConnectedUser>();
 const activeParties = new Map<string, Set<string>>();
 const activeCombats = new Map<string, any>();
