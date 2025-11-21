@@ -1,35 +1,32 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import { LoginRegister } from './components/auth/LoginRegister';
+import { ClassSelection } from './components/character/ClassSelection';
+import { Game } from './components/Game';
+import { useAuthStore } from './stores/authStore';
+import { useCharacterStore } from './stores/characterStore';
+
+type GameState = 'auth' | 'class-selection' | 'game';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [gameState, setGameState] = useState<GameState>('auth');
+  const { isAuthenticated } = useAuthStore();
+  const { playerCharacter } = useCharacterStore();
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+  // Déterminer quel écran afficher
+  if (!isAuthenticated && gameState === 'auth') {
+    return <LoginRegister />;
+  }
+
+  if (isAuthenticated && !playerCharacter && gameState !== 'game') {
+    return <ClassSelection onComplete={() => setGameState('game')} />;
+  }
+
+  if (playerCharacter) {
+    return <Game />;
+  }
+
+  // Par défaut, afficher l'authentification
+  return <LoginRegister />;
 }
 
-export default App
+export default App;

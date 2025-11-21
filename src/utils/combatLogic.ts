@@ -1,16 +1,17 @@
 import { Character } from '../types/character.types';
 import { Spell } from '../types/spell.types';
 import { CombatAction, CombatLogEntry } from '../types/combat.types';
+import { Monster } from '../types/monster.types';
 import { calculateDamage, calculateHealing, calculateInitiative, checkHit, applyDamage, applyHealing } from './damageCalculator';
 import { isInRange } from './distanceCalculator';
 
 /**
  * Détermine l'ordre des tours basé sur l'initiative
  */
-export const determineTurnOrder = (characters: Character[]): string[] => {
+export const determineTurnOrder = (characters: (Character | Monster)[]): string[] => {
   const initiativeMap = characters.map((char) => ({
     id: char.id,
-    initiative: calculateInitiative(char),
+    initiative: calculateInitiative(char as Character),
   }));
 
   // Trier par initiative décroissante
