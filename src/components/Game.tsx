@@ -5,6 +5,11 @@ import { GameGrid } from './3d/GameGrid';
 import { Character3D } from './3d/Character3D';
 import { Monster3D } from './3d/Monster3D';
 import { CombatUI } from './ui/CombatUI';
+import { SocialPanel } from './ui/SocialPanel';
+import { QuestPanel } from './ui/QuestPanel';
+import { BattlePassPanel } from './ui/BattlePassPanel';
+import { AchievementPanel } from './ui/AchievementPanel';
+import { WorldMapPanel } from './ui/WorldMapPanel';
 import { useCharacterStore } from '../stores/characterStore';
 import { useWorldStore } from '../stores/worldStore';
 import { useGameStore } from '../stores/gameStore';
@@ -148,6 +153,13 @@ export const Game = () => {
 
       {/* UI de combat */}
       <CombatUI />
+
+      {/* New UI Panels */}
+      <SocialPanel />
+      <QuestPanel />
+      <BattlePassPanel />
+      <AchievementPanel />
+      <WorldMapPanel />
 
       {/* Instructions */}
       {!isInCombat && (

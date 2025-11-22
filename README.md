@@ -10,6 +10,17 @@ Un MMORPG 3D innovant en tour par tour, développé avec React, Three.js et Type
 - Login/Register avec email et mot de passe
 - Support OAuth avec Google et GitHub (préparé)
 - Interface moderne et responsive
+- JWT pour la sécurité
+- Backend Node.js + MongoDB
+
+### 🌐 Mode Multijoueur en Ligne
+- **WebSocket temps réel** avec Socket.io
+- **Système d'amis** : liste d'amis, demandes, statut en ligne
+- **Système de groupes** : créez des parties de 3-5 joueurs
+- **Guildes** : créez ou rejoignez une guilde, rangs, trésorerie
+- **Chat en temps réel** : global, groupe, guilde, chuchotement
+- **Combat multijoueur** : affrontez des monstres en groupe
+- **Donjons en groupe** : 20+ donjons pour 3 joueurs
 
 ### 🏰 Monde 3D Immense
 - **Carte de 100x100 cases** avec rendu 3D complet
@@ -48,13 +59,50 @@ Différentes raretés et niveaux :
 - **Boss** : Dragons, Phénix, Krakens (Niv 61-80)
 - **Légendaires** : Spectres, Basilics, Griffons (Niv 81-100)
 
+### 🏆 Battle Pass (100 Paliers)
+- **Système de progression** avec 100 paliers
+- **Récompenses gratuites** et **premium**
+- **Quêtes quotidiennes** : 10+ quêtes qui se réinitialisent chaque jour
+- **Quêtes hebdomadaires** : défis plus difficiles
+- **Quêtes mensuelles** : récompenses exceptionnelles
+- **Quêtes de guilde** : progression en équipe
+- **XP de Battle Pass** gagnée via les quêtes
+
+### 🏅 Système de Succès (Style PSN)
+- **25+ succès** répartis en 5 catégories
+- Catégories : Combat, Exploration, Social, Progression, Collection
+- **Raretés** : Bronze, Argent, Or, Platine
+- **Succès secrets** à découvrir
+- **Récompenses** : XP, or, titres spéciaux
+- **Notifications** style PlayStation
+
+### 🗺️ Monde Immense
+- **5 Pays uniques** avec thèmes distincts :
+  - Royaume de Valoria (débutants)
+  - Empire de Solaris (désert)
+  - Nord Gelé (glace)
+  - Îles Mystiques (magie)
+  - Terres d'Ombre (corruption)
+- **50+ Cartes** (10+ par pays)
+- **Navigation** entre cartes et pays
+- **Niveaux recommandés** pour chaque zone
+
+### 🏰 Donjons de Groupe
+- **20+ Donjons** obscurs
+- **Requis** : Groupes de 3 joueurs
+- **Difficultés** : Normal, Difficile, Extrême
+- **Boss uniques** dans chaque donjon
+- **Récompenses** : XP, or, objets légendaires
+- **Matchmaking** pour trouver des coéquipiers
+
 ## 🚀 Installation
 
 ### Prérequis
 - Node.js 18+ 
 - npm ou yarn
+- MongoDB (pour le serveur backend)
 
-### Étapes
+### Installation Frontend
 
 ```bash
 # Cloner le repository
@@ -73,6 +121,32 @@ npm run build
 # Preview du build
 npm run preview
 ```
+
+### Installation Backend (Serveur)
+
+```bash
+# Dans le dossier du projet
+
+# Copier le fichier d'environnement
+cp .env.example .env
+
+# Éditer .env avec vos configurations
+# MONGODB_URI=mongodb://localhost:27017/mmorpg
+# JWT_SECRET=votre-cle-secrete
+# PORT=3000
+
+# Démarrer MongoDB
+sudo systemctl start mongod  # Linux
+brew services start mongodb-community  # macOS
+
+# Lancer le serveur
+npm run server
+```
+
+Le serveur sera accessible sur `http://localhost:3000`  
+Le frontend sera accessible sur `http://localhost:5173`
+
+Pour plus de détails sur le serveur, voir [SERVER_README.md](SERVER_README.md)
 
 ## 📁 Structure du Projet
 
@@ -162,6 +236,12 @@ distance = Math.abs(char1.x - char2.x) + Math.abs(char1.z - char2.z)
 - [x] Combat tour par tour
 - [x] 70 sorts
 - [x] Interface HUD complète
+- [x] Système de quêtes (quotidiennes, hebdomadaires, mensuelles)
+- [x] Battle Pass avec 100 paliers
+- [x] Système de succès (25+ succès)
+- [x] 5 pays avec 50+ cartes
+- [x] 20+ donjons (3 joueurs)
+- [x] PWA (Progressive Web App)
 
 ### Phase 2 - Extensions (En cours)
 - [ ] Système de déplacement complet
@@ -172,13 +252,15 @@ distance = Math.abs(char1.x - char2.x) + Math.abs(char1.z - char2.z)
 - [ ] Artéfacts légendaires
 - [ ] Familiers et montures
 
-### Phase 3 - Multijoueur
-- [ ] Backend Node.js + Express
-- [ ] WebSocket temps réel
-- [ ] Matchmaking
-- [ ] Combat PvP
-- [ ] Guildes et système social
-- [ ] Base de données (MongoDB/PostgreSQL)
+### Phase 3 - Multijoueur ✅ (Complété)
+- [x] Backend Node.js + Express
+- [x] WebSocket temps réel (Socket.io)
+- [x] Système d'amis et messagerie
+- [x] Combat multijoueur
+- [x] Guildes et système social
+- [x] Base de données MongoDB
+- [x] Système de groupes/parties
+- [x] Chat (global, guilde, groupe, chuchotement)
 
 ### Phase 4 - Polish
 - [ ] Optimisations 3D
@@ -203,14 +285,21 @@ distance = Math.abs(char1.x - char2.x) + Math.abs(char1.z - char2.z)
 
 ## 📊 Statistiques du Projet
 
-- **~5000+ lignes de code TypeScript**
-- **10+ composants React**
+- **~15000+ lignes de code TypeScript**
+- **25+ composants React**
 - **5 composants 3D Three.js**
-- **5 stores Zustand**
+- **10+ stores Zustand**
 - **50+ monstres avec IA**
 - **70 sorts uniques**
 - **7 classes jouables**
-- **Carte 100x100 cases**
+- **5 pays, 50+ cartes**
+- **20+ donjons**
+- **25+ succès**
+- **20+ quêtes**
+- **100 paliers Battle Pass**
+- **Backend Node.js + MongoDB**
+- **WebSocket temps réel**
+- **PWA-ready**
 
 ## 🤝 Contribution
 
