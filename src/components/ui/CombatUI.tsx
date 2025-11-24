@@ -18,9 +18,36 @@ export const CombatUI = () => {
 
   return (
     <div className="fixed inset-0 pointer-events-none">
+      <style>{`
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.7;
+            transform: scale(1.05);
+          }
+        }
+      `}</style>
+
       {/* HUD en haut */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 pointer-events-auto">
-        <div className="bg-slate-900/90 backdrop-blur-sm rounded-xl p-4 border border-purple-500/30 shadow-2xl">
+        <div className={`bg-slate-900/95 backdrop-blur-sm rounded-xl p-4 border-2 shadow-2xl ${
+          isPlayerTurn 
+            ? 'border-green-500/70 shadow-green-500/30' 
+            : 'border-purple-500/30'
+        }`}>
           <div className="flex items-center gap-6">
             {/* Tour actuel */}
             <div className="text-center">
@@ -31,7 +58,13 @@ export const CombatUI = () => {
             {/* Personnage actuel */}
             <div className="border-l border-slate-700 pl-6">
               <div className="text-gray-400 text-xs mb-1">Tour de</div>
-              <div className="text-xl font-bold text-white">{currentCharacter?.name}</div>
+              <div className={`text-xl font-bold flex items-center gap-2 ${
+                isPlayerTurn ? 'text-green-400' : 'text-white'
+              }`}>
+                {isPlayerTurn && <span className="animate-pulse">👤</span>}
+                {currentCharacter?.name}
+                {isPlayerTurn && <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full">VOUS</span>}
+              </div>
             </div>
 
             {/* Stats du joueur */}
@@ -91,94 +124,172 @@ export const CombatUI = () => {
       </div>
 
       {/* Sorts disponibles - Bas de l'écran */}
-      {isPlayerTurn && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto">
-          <div className="bg-slate-900/90 backdrop-blur-sm rounded-xl p-4 border border-purple-500/30 shadow-2xl">
-            <div className="flex gap-3 mb-4">
-              {playerSpells.slice(0, 10).map((spell) => {
+      {isInCombat && (
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto max-w-screen-lg">
+          <div className="bg-slate-900/95 backdrop-blur-sm rounded-xl p-5 border-2 border-purple-500/50 shadow-2xl">
+            {/* En-tête de la barre de sorts */}
+            <div className="text-center mb-3">
+              <h3 className="text-lg font-bold text-white mb-1">⚔️ Sorts Disponibles</h3>
+              <p className="text-xs text-gray-400">
+                {!isPlayerTurn 
+                  ? `⏳ En attente du tour de ${currentCharacter?.name}...`
+                  : selectedSpell 
+                  ? `✨ ${selectedSpell.name} sélectionné - Cliquez sur une cible` 
+                  : 'Sélectionnez un sort puis cliquez sur une cible'}
+              </p>
+            </div>
+
+            {/* Grille de sorts */}
+            <div className="flex gap-2 mb-4 justify-center flex-wrap max-w-4xl">
+              {playerSpells.map((spell, index) => {
                 const canAfford = playerCharacter.pa >= spell.pa;
                 const isSelected = selectedSpell?.id === spell.id;
 
                 return (
-                  <button
-                    key={spell.id}
-                    onClick={() => selectSpell(isSelected ? null : spell)}
-                    disabled={!canAfford}
-                    className={`relative group ${
-                      isSelected
-                        ? 'ring-2 ring-purple-500 scale-105'
-                        : canAfford
-                        ? 'hover:scale-105'
-                        : 'opacity-50'
-                    } transition-all`}
-                  >
-                    <div
-                      className="w-14 h-14 rounded-lg flex items-center justify-center text-2xl"
-                      style={{
-                        backgroundColor: `${getElementColor(spell.element)}40`,
-                        border: `2px solid ${getElementColor(spell.element)}`,
-                      }}
+                  <div key={spell.id} className="relative">
+                    <button
+                      onClick={() => selectSpell(isSelected ? null : spell)}
+                      disabled={!canAfford || !isPlayerTurn}
+                      className={`relative group ${
+                        !isPlayerTurn
+                          ? 'opacity-30 cursor-not-allowed grayscale'
+                          : isSelected
+                          ? 'ring-4 ring-purple-500 scale-110 shadow-lg shadow-purple-500/50'
+                          : canAfford
+                          ? 'hover:scale-105 hover:shadow-lg'
+                          : 'opacity-40 cursor-not-allowed grayscale'
+                      } transition-all duration-200`}
                     >
-                      {getElementEmoji(spell.element)}
-                    </div>
-                    
-                    {/* PA Cost */}
-                    <div className="absolute -top-1 -right-1 bg-yellow-500 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {spell.pa}
-                    </div>
+                      <div
+                        className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl relative"
+                        style={{
+                          backgroundColor: `${getElementColor(spell.element)}60`,
+                          border: `3px solid ${getElementColor(spell.element)}`,
+                          boxShadow: isSelected ? `0 0 20px ${getElementColor(spell.element)}80` : 'none',
+                        }}
+                      >
+                        {getElementEmoji(spell.element)}
+                      </div>
+                      
+                      {/* Numéro de raccourci */}
+                      <div className="absolute -top-2 -left-2 bg-slate-800 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center border-2 border-slate-600">
+                        {index + 1}
+                      </div>
 
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      <div className="bg-slate-800 rounded-lg p-3 shadow-xl border border-slate-600 whitespace-nowrap">
-                        <div className="font-bold text-white mb-1">{spell.name}</div>
-                        <div className="text-xs text-gray-400 mb-2">{spell.description}</div>
-                        <div className="text-xs text-gray-300">
-                          <div>Dégâts: {spell.damageMin}-{spell.damageMax}</div>
-                          <div>Portée: {spell.rangeMin}-{spell.rangeMax}</div>
-                          <div>Critique: {(spell.critChance * 100).toFixed(1)}%</div>
+                      {/* PA Cost */}
+                      <div className="absolute -top-2 -right-2 bg-yellow-500 text-black text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center border-2 border-yellow-600">
+                        {spell.pa}
+                      </div>
+
+                      {/* Nom du sort en dessous */}
+                      <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                        <span className="text-xs font-semibold text-white bg-slate-800/90 px-2 py-1 rounded">
+                          {spell.name}
+                        </span>
+                      </div>
+
+                      {/* Tooltip détaillé */}
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                        <div className="bg-slate-800 rounded-lg p-4 shadow-2xl border-2 border-purple-500/50 whitespace-nowrap">
+                          <div className="font-bold text-white text-lg mb-2 flex items-center gap-2">
+                            {getElementEmoji(spell.element)} {spell.name}
+                          </div>
+                          <div className="text-sm text-gray-400 mb-3 max-w-xs whitespace-normal">
+                            {spell.description}
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div className="bg-slate-700/50 p-2 rounded">
+                              <div className="text-gray-400 text-xs">Dégâts</div>
+                              <div className="text-red-400 font-bold">{spell.damageMin}-{spell.damageMax}</div>
+                            </div>
+                            <div className="bg-slate-700/50 p-2 rounded">
+                              <div className="text-gray-400 text-xs">Portée</div>
+                              <div className="text-blue-400 font-bold">{spell.rangeMin}-{spell.rangeMax}</div>
+                            </div>
+                            <div className="bg-slate-700/50 p-2 rounded">
+                              <div className="text-gray-400 text-xs">Coût PA</div>
+                              <div className="text-yellow-400 font-bold">{spell.pa} PA</div>
+                            </div>
+                            <div className="bg-slate-700/50 p-2 rounded">
+                              <div className="text-gray-400 text-xs">Critique</div>
+                              <div className="text-purple-400 font-bold">{(spell.critChance * 100).toFixed(1)}%</div>
+                            </div>
+                          </div>
+                          <div className="mt-2 pt-2 border-t border-slate-600">
+                            <div className="text-xs text-gray-400">
+                              Élément: <span style={{ color: getElementColor(spell.element) }} className="font-bold">{spell.element}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                  </div>
                 );
               })}
             </div>
 
-            <button
-              onClick={nextTurn}
-              className="w-full py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all"
-            >
-              Terminer le Tour
-            </button>
+            {/* Boutons d'action */}
+            <div className="flex gap-3">
+              {selectedSpell && (
+                <button
+                  onClick={() => selectSpell(null)}
+                  className="flex-1 py-2 bg-slate-700 text-white font-bold rounded-lg hover:bg-slate-600 transition-all"
+                >
+                  ❌ Annuler
+                </button>
+              )}
+              <button
+                onClick={nextTurn}
+                disabled={!isPlayerTurn}
+                className={`flex-1 py-3 font-bold rounded-lg transition-all shadow-lg ${
+                  isPlayerTurn
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
+                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                ⏭️ Terminer le Tour
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Journal de combat - Droite */}
       <div className="absolute right-4 top-20 bottom-4 w-80 pointer-events-auto">
-        <div className="bg-slate-900/90 backdrop-blur-sm rounded-xl p-4 border border-purple-500/30 shadow-2xl h-full flex flex-col">
-          <h3 className="text-lg font-bold text-white mb-3">📜 Journal de Combat</h3>
+        <div className="bg-slate-900/95 backdrop-blur-sm rounded-xl p-4 border-2 border-purple-500/40 shadow-2xl h-full flex flex-col">
+          <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+            📜 Journal de Combat
+            <span className="text-xs text-gray-400 font-normal">({combatLog.length})</span>
+          </h3>
           <div className="flex-1 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-slate-800">
-            {combatLog.slice().reverse().map((entry) => (
+            {combatLog.slice().reverse().map((entry, index) => (
               <div
                 key={entry.id}
-                className={`p-2 rounded text-sm ${
+                style={{ 
+                  animation: index === 0 ? 'slideInRight 0.3s ease-out' : 'none'
+                }}
+                className={`p-3 rounded-lg text-sm shadow-md ${
                   entry.type === 'critical'
-                    ? 'bg-yellow-500/20 text-yellow-300 font-bold'
+                    ? 'bg-yellow-500/30 text-yellow-200 font-bold border-l-4 border-yellow-400'
                     : entry.type === 'damage'
-                    ? 'bg-red-500/20 text-red-300'
+                    ? 'bg-red-500/30 text-red-200 border-l-4 border-red-400'
                     : entry.type === 'heal'
-                    ? 'bg-green-500/20 text-green-300'
+                    ? 'bg-green-500/30 text-green-200 border-l-4 border-green-400'
                     : entry.type === 'death'
-                    ? 'bg-purple-500/20 text-purple-300 font-bold'
+                    ? 'bg-purple-500/30 text-purple-200 font-bold border-l-4 border-purple-400'
                     : entry.type === 'turn'
-                    ? 'bg-blue-500/20 text-blue-300 font-semibold'
-                    : 'bg-slate-700/50 text-gray-300'
+                    ? 'bg-blue-500/30 text-blue-200 font-semibold border-l-4 border-blue-400'
+                    : 'bg-slate-700/70 text-gray-200 border-l-4 border-slate-500'
                 }`}
               >
                 {entry.message}
               </div>
             ))}
+            {combatLog.length === 0 && (
+              <div className="text-center text-gray-500 italic py-8">
+                Le combat va commencer...
+              </div>
+            )}
           </div>
         </div>
       </div>

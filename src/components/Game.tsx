@@ -18,8 +18,10 @@ import { useCharacterStore } from '../stores/characterStore';
 import { useWorldStore } from '../stores/worldStore';
 import { useGameStore } from '../stores/gameStore';
 import { useWeaponStore } from '../stores/weaponStore';
+import { useCombatStore } from '../stores/combatStore';
 import { getMonstersByLevel } from '../data/monsters';
 import { Monster } from '../types/monster.types';
+import { CombatLogEntry } from '../types/combat.types';
 import { determineTurnOrder } from '../utils/combatLogic';
 import { generateMonsterGroups } from '../utils/monsterGroupGenerator';
 import * as THREE from 'three';
@@ -27,11 +29,115 @@ import * as THREE from 'three';
 export const Game = () => {
   const { characters, playerCharacter, updateCharacter } = useCharacterStore();
   const { monsters, addMonster } = useWorldStore();
-  const { startCombat, isInCombat, setTurnOrder } = useGameStore();
+  const { startCombat, isInCombat, setTurnOrder, turnOrder, currentTurnIndex, addLogEntry } = useGameStore();
   const { toggleWeapon } = useWeaponStore();
   
   const playerRef = useRef<THREE.Group>(null);
+  const playerPosition = useRef({ x: 0, z: 0 });
   const [keys, setKeys] = useState<Set<string>>(new Set());
+  
+  const { selectedSpell, selectTarget, clearSelection } = useCombatStore();
+  
+  // Helper pour ajouter des logs facilement
+  const addLog = (message: string, type: CombatLogEntry['type'] = 'info') => {
+    addLogEntry({
+      id: `log_${Date.now()}_${Math.random()}`,
+      message,
+      timestamp: Date.now(),
+      type,
+    });
+  };
+
+  // Helper pour obtenir l'emoji d'un élément
+  const getElementEmoji = (element: string): string => {
+    const emojis: Record<string, string> = {
+      EARTH: '🪨', FIRE: '🔥', AIR: '💨', WATER: '💧',
+      LIGHT: '✨', SHADOW: '🌑', POISON: '☠️', DARKNESS: '🌚',
+      ARCANE: '🔮', ICE: '❄️', ELECTRIC: '⚡', STEALTH: '👁️',
+    };
+    return emojis[element] || '⚔️';
+  };
+
+  // Gestionnaire de clic sur monstre pour lancer un sort
+  const handleMonsterClick = (monster: Monster) => {
+    if (!isInCombat || !playerCharacter || !selectedSpell) {
+      if (!selectedSpell) {
+        addLog('⚠️ Sélectionnez d\'abord un sort !', 'info');
+      }
+      return;
+    }
+
+    // Vérifier si c'est le tour du joueur
+    const currentCharacterId = turnOrder[currentTurnIndex];
+    if (currentCharacterId !== playerCharacter.id) {
+      addLog('⚠️ Ce n\'est pas votre tour !', 'info');
+      return;
+    }
+
+    // Vérifier si le joueur a assez de PA
+    if (playerCharacter.pa < selectedSpell.pa) {
+      addLog('⚠️ Pas assez de PA !', 'info');
+      return;
+    }
+
+    // Vérifier si le monstre est vivant
+    if (!monster.isAlive) {
+      addLog('⚠️ Cette cible est déjà morte !', 'info');
+      return;
+    }
+
+    // Calculer la distance
+    const distance = Math.sqrt(
+      Math.pow(monster.position.x - playerCharacter.position.x, 2) +
+      Math.pow(monster.position.z - playerCharacter.position.z, 2)
+    );
+
+    // Vérifier la portée
+    if (distance < selectedSpell.rangeMin || distance > selectedSpell.rangeMax) {
+      addLog(
+        `⚠️ Hors de portée ! Distance: ${distance.toFixed(1)}, Portée: ${selectedSpell.rangeMin}-${selectedSpell.rangeMax}`,
+        'info'
+      );
+      return;
+    }
+
+    // Calculer les dégâts
+    const baseDamage = Math.floor(
+      Math.random() * (selectedSpell.damageMax - selectedSpell.damageMin + 1) + selectedSpell.damageMin
+    );
+    
+    const isCritical = Math.random() < selectedSpell.critChance;
+    const finalDamage = Math.floor(isCritical ? baseDamage * 1.5 : baseDamage);
+
+    // Appliquer les dégâts
+    const newHp = Math.max(0, monster.hp - finalDamage);
+    const updateMonster = useWorldStore.getState().updateMonster;
+    updateMonster(monster.id, { hp: newHp, isAlive: newHp > 0 });
+
+    // Retirer les PA
+    updateCharacter(playerCharacter.id, { pa: playerCharacter.pa - selectedSpell.pa });
+
+    // Log
+    if (isCritical) {
+      addLog(
+        `💥 COUP CRITIQUE ! ${playerCharacter.name} lance ${selectedSpell.name} sur ${monster.name} pour ${finalDamage} dégâts !`,
+        'critical'
+      );
+    } else {
+      addLog(
+        `⚔️ ${playerCharacter.name} lance ${selectedSpell.name} sur ${monster.name} pour ${finalDamage} dégâts`,
+        'damage'
+      );
+    }
+
+    // Vérifier si le monstre est mort
+    if (newHp <= 0) {
+      addLog(`💀 ${monster.name} a été vaincu !`, 'death');
+    }
+
+    // Nettoyer la sélection
+    clearSelection();
+  };
 
   // Spawn initial monster groups
   useEffect(() => {
@@ -127,25 +233,55 @@ export const Game = () => {
     };
   }, [toggleWeapon]);
 
+  // Initialiser la position du joueur
+  useEffect(() => {
+    if (playerCharacter) {
+      playerPosition.current = { 
+        x: playerCharacter.position.x, 
+        z: playerCharacter.position.z 
+      };
+    }
+  }, [playerCharacter?.id]); // Seulement quand le personnage change
+  
   // Mouvement du personnage avec ZQSD
   useEffect(() => {
     if (!playerCharacter) return;
 
-    const moveSpeed = keys.has('shift') ? 0.2 : 0.1; // Sprint avec Shift
-    let newX = playerCharacter.position.x;
-    let newZ = playerCharacter.position.z;
+    const interval = setInterval(() => {
+      if (keys.size === 0) return;
+      
+      const moveSpeed = keys.has('shift') ? 0.2 : 0.1; // Sprint avec Shift
+      let newX = playerPosition.current.x;
+      let newZ = playerPosition.current.z;
+      let moved = false;
 
-    if (keys.has('z') || keys.has('arrowup')) newZ -= moveSpeed;
-    if (keys.has('s') || keys.has('arrowdown')) newZ += moveSpeed;
-    if (keys.has('q') || keys.has('arrowleft')) newX -= moveSpeed;
-    if (keys.has('d') || keys.has('arrowright')) newX += moveSpeed;
+      if (keys.has('z') || keys.has('arrowup')) {
+        newZ -= moveSpeed;
+        moved = true;
+      }
+      if (keys.has('s') || keys.has('arrowdown')) {
+        newZ += moveSpeed;
+        moved = true;
+      }
+      if (keys.has('q') || keys.has('arrowleft')) {
+        newX -= moveSpeed;
+        moved = true;
+      }
+      if (keys.has('d') || keys.has('arrowright')) {
+        newX += moveSpeed;
+        moved = true;
+      }
 
-    if (newX !== playerCharacter.position.x || newZ !== playerCharacter.position.z) {
-      updateCharacter(playerCharacter.id, {
-        position: { x: newX, z: newZ },
-      });
-    }
-  }, [keys, playerCharacter, updateCharacter]);
+      if (moved) {
+        playerPosition.current = { x: newX, z: newZ };
+        updateCharacter(playerCharacter.id, {
+          position: { x: newX, z: newZ },
+        });
+      }
+    }, 50); // Mise à jour toutes les 50ms
+
+    return () => clearInterval(interval);
+  }, [keys, playerCharacter?.id, updateCharacter]);
 
   // Démarrer le combat automatiquement quand on approche des monstres
   useEffect(() => {
@@ -156,7 +292,7 @@ export const Game = () => {
             Math.pow(m.position.x - playerCharacter.position.x, 2) +
             Math.pow(m.position.z - playerCharacter.position.z, 2)
           );
-          return distance < 8 && m.isAlive;
+          return distance < 5 && m.isAlive;
         })
         .slice(0, 3);
 
@@ -165,10 +301,11 @@ export const Game = () => {
         const turnOrder = determineTurnOrder(allCombatants);
         setTurnOrder(turnOrder);
         startCombat(turnOrder);
+        addLog(`⚔️ Combat engagé contre ${nearbyMonsters.length} monstre(s) !`, 'turn');
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playerCharacter, monsters, isInCombat]);
+  }, [playerCharacter?.position.x, playerCharacter?.position.z, isInCombat]);
 
   return (
     <div className="w-full h-screen bg-slate-950">
@@ -176,7 +313,7 @@ export const Game = () => {
         <PerspectiveCamera makeDefault position={[0, 5, 10]} fov={75} />
         
         {/* Caméra 3ème personne */}
-        {playerCharacter && playerRef.current && (
+        {playerCharacter && (
           <ThirdPersonCamera target={playerRef} distance={8} height={4} smoothness={0.1} />
         )}
 
@@ -206,7 +343,7 @@ export const Game = () => {
           <group key={monster.id}>
             <Monster3D
               monster={monster}
-              onClick={() => console.log('Monster clicked:', monster.name)}
+              onClick={() => handleMonsterClick(monster)}
             />
             {/* Indicateur de boss */}
             {monster.name.includes('Chef') && (
@@ -225,6 +362,45 @@ export const Game = () => {
       {/* UI de combat */}
       <CombatUI />
 
+      {/* Message d'aide au centre quand pas en combat */}
+      {!isInCombat && playerCharacter && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+          <div className="bg-slate-900/95 backdrop-blur-sm rounded-2xl p-8 border-2 border-purple-500/50 shadow-2xl max-w-lg">
+            <h2 className="text-3xl font-bold text-white mb-4">🎮 Bienvenue !</h2>
+            <p className="text-lg text-gray-300 mb-4">
+              Utilisez <kbd className="px-2 py-1 bg-slate-700 rounded text-white font-bold">ZQSD</kbd> ou les flèches pour vous déplacer
+            </p>
+            <p className="text-md text-yellow-300 mb-6">
+              👾 Approchez-vous des monstres ou cliquez sur le bouton en haut à gauche pour commencer le combat !
+            </p>
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
+              <span>💡</span>
+              <span>Le combat se déclenchera automatiquement à moins de 5 cases d'un monstre</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Indicateur de sort sélectionné (suit le curseur) */}
+      {selectedSpell && isInCombat && (
+        <div 
+          className="fixed pointer-events-none z-50"
+          style={{
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <div className="bg-purple-600/90 backdrop-blur-sm rounded-full p-3 border-2 border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse">
+            <div className="text-2xl">{getElementEmoji(selectedSpell.element)}</div>
+          </div>
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-slate-900/95 px-3 py-1 rounded-lg border border-purple-500/50 whitespace-nowrap">
+            <div className="text-xs font-bold text-white">{selectedSpell.name}</div>
+            <div className="text-xs text-gray-400">Portée: {selectedSpell.rangeMin}-{selectedSpell.rangeMax}</div>
+          </div>
+        </div>
+      )}
+
       {/* Panneau des contrôles */}
       <ControlsPanel />
 
@@ -235,20 +411,65 @@ export const Game = () => {
       <AchievementPanel />
       <WorldMapPanel />
 
-      {/* Instructions de déplacement */}
-      {!isInCombat && (
-        <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-sm rounded-xl p-4 border border-purple-500/30 max-w-md">
-          <h3 className="text-lg font-bold text-white mb-2">🎮 MMORPG 3D - 3ème Personne</h3>
-          <ul className="text-sm text-gray-300 space-y-1">
-            <li>• ZQSD ou Flèches : Se déplacer</li>
-            <li>• Shift : Courir</li>
-            <li>• Clic droit + Souris : Tourner la caméra</li>
-            <li>• Molette : Zoom</li>
-            <li>• R : Ranger/Sortir l'arme (combat aux poings)</li>
-            <li>• Approchez des monstres pour commencer le combat</li>
-          </ul>
-        </div>
-      )}
+      {/* Instructions et bouton de combat */}
+      {!isInCombat && playerCharacter && monsters.length > 0 && (() => {
+        const nearbyMonsters = monsters.filter((m) => {
+          const distance = Math.sqrt(
+            Math.pow(m.position.x - playerCharacter.position.x, 2) +
+            Math.pow(m.position.z - playerCharacter.position.z, 2)
+          );
+          return distance < 10 && m.isAlive;
+        });
+        const veryClose = nearbyMonsters.filter((m) => {
+          const distance = Math.sqrt(
+            Math.pow(m.position.x - playerCharacter.position.x, 2) +
+            Math.pow(m.position.z - playerCharacter.position.z, 2)
+          );
+          return distance < 5;
+        });
+
+        return (
+          <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-sm rounded-xl p-4 border border-purple-500/30 max-w-md">
+            <h3 className="text-lg font-bold text-white mb-2">🎮 MMORPG 3D - 3ème Personne</h3>
+            <ul className="text-sm text-gray-300 space-y-1 mb-3">
+              <li>• ZQSD ou Flèches : Se déplacer</li>
+              <li>• Shift : Courir</li>
+              <li>• Clic droit + Souris : Tourner la caméra</li>
+              <li>• Molette : Zoom</li>
+              <li>• R : Ranger/Sortir l'arme (combat aux poings)</li>
+            </ul>
+            
+            {nearbyMonsters.length > 0 && (
+              <div className="mb-3 p-2 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
+                <p className="text-yellow-300 text-sm font-semibold">
+                  ⚠️ {nearbyMonsters.length} monstre(s) à proximité
+                </p>
+                {veryClose.length > 0 && (
+                  <p className="text-red-300 text-xs mt-1">
+                    🎯 {veryClose.length} très proche(s) - Combat auto dans 5 cases
+                  </p>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                const combatMonsters = monsters.filter(m => m.isAlive).slice(0, 3);
+                if (combatMonsters.length > 0) {
+                  const allCombatants = [playerCharacter, ...combatMonsters];
+                  const order = determineTurnOrder(allCombatants);
+                  setTurnOrder(order);
+                  startCombat(order);
+                  addLog('⚔️ Le combat commence !', 'turn');
+                }
+              }}
+              className="w-full py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-lg hover:from-red-700 hover:to-orange-700 transition-all shadow-lg animate-pulse"
+            >
+              ⚔️ Commencer le Combat Maintenant
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Indicateur d'arme */}
       {playerCharacter && (

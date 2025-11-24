@@ -17,8 +17,10 @@ export const Monster3D = ({ monster, onClick }: Monster3DProps) => {
   
   const hoveredCharacterId = useCombatStore((state) => state.hoveredCharacterId);
   const setHoveredCharacter = useCombatStore((state) => state.setHoveredCharacter);
+  const selectedSpell = useCombatStore((state) => state.selectedSpell);
   
   const isHovered = hoveredCharacterId === monster.id || hovered;
+  const isTargetable = selectedSpell !== null && monster.isAlive;
 
   // Animation de respiration
   useFrame((state) => {
@@ -57,17 +59,46 @@ export const Monster3D = ({ monster, onClick }: Monster3DProps) => {
         setHoveredCharacter(null);
       }}
     >
+      {/* Indicateur de ciblage */}
+      {isTargetable && (
+        <mesh position={[0, -0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[scale * 0.6, scale * 0.8, 32]} />
+          <meshBasicMaterial 
+            color={isHovered ? '#00ff00' : '#ffff00'} 
+            transparent 
+            opacity={isHovered ? 0.8 : 0.5}
+            side={2}
+          />
+        </mesh>
+      )}
+
       {/* Corps du monstre */}
       <mesh ref={meshRef} castShadow>
         <boxGeometry args={[0.8 * scale, 1.5 * scale, 0.8 * scale]} />
         <meshStandardMaterial
           color={monster.definition.color}
-          emissive={isHovered ? monster.definition.color : '#000000'}
-          emissiveIntensity={isHovered ? 0.3 : 0}
+          emissive={isTargetable && isHovered ? '#00ff00' : isHovered ? monster.definition.color : '#000000'}
+          emissiveIntensity={isTargetable && isHovered ? 0.5 : isHovered ? 0.3 : 0}
           roughness={0.8}
           metalness={0.2}
         />
       </mesh>
+      
+      {/* Curseur de souris au survol */}
+      {isTargetable && isHovered && (
+        <Html center>
+          <div style={{ 
+            pointerEvents: 'none',
+            color: '#00ff00', 
+            fontSize: '24px',
+            fontWeight: 'bold',
+            textShadow: '0 0 10px #00ff00',
+            animation: 'pulse 1s infinite'
+          }}>
+            🎯
+          </div>
+        </Html>
+      )}
 
       {/* Détails selon le type */}
       {/* Cornes pour les boss et élites */}
