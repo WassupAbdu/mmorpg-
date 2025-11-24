@@ -20,20 +20,20 @@ export const LoginRegister = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 overflow-y-auto">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iLjAzIj48cGF0aCBkPSJNMzYgMzBoNHYxaC00ek0zNCAzMGgxdjRoLTF6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20" />
       
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md my-auto">
         {/* Logo / Titre */}
-        <div className="text-center mb-8">
-          <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-2">
             ⚔️ MMORPG
           </h1>
-          <p className="text-xl text-gray-300">L'aventure commence ici</p>
+          <p className="text-lg sm:text-xl text-gray-300">L'aventure commence ici</p>
         </div>
 
         {/* Formulaire */}
-        <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-purple-500/20">
+        <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-8 border border-purple-500/20">
           <div className="flex gap-2 mb-6">
             <button
               onClick={() => setIsLogin(true)}
@@ -166,7 +166,7 @@ export const LoginRegister = () => {
           </div>
         </div>
 
-        <div className="text-center mt-6 text-gray-400 text-sm">
+        <div className="text-center mt-4 sm:mt-6 text-gray-400 text-xs sm:text-sm px-4">
           <p>En continuant, vous acceptez nos conditions d'utilisation</p>
         </div>
       </div>

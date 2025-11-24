@@ -32,14 +32,14 @@ export const ClassSelection = ({ onComplete }: ClassSelectionProps) => {
   const classData = selectedClass ? CLASSES[selectedClass] : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900 p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-5xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900 overflow-y-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-6 sm:mb-8 lg:mb-12">
           Choisissez Votre Classe
         </h1>
 
         {/* Grille de classes */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {Object.values(CharacterClass).map((classType) => {
             const classInfo = CLASSES[classType];
             const isSelected = selectedClass === classType;
@@ -48,7 +48,7 @@ export const ClassSelection = ({ onComplete }: ClassSelectionProps) => {
               <button
                 key={classType}
                 onClick={() => setSelectedClass(classType)}
-                className={`p-6 rounded-xl transition-all transform hover:scale-105 ${
+                className={`p-4 sm:p-6 rounded-xl transition-all transform hover:scale-105 ${
                   isSelected
                     ? 'ring-4 ring-purple-500 shadow-2xl shadow-purple-500/50'
                     : 'hover:ring-2 hover:ring-purple-400'
@@ -60,7 +60,7 @@ export const ClassSelection = ({ onComplete }: ClassSelectionProps) => {
                 }}
               >
                 <div
-                  className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center text-3xl"
+                  className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-full flex items-center justify-center text-2xl sm:text-3xl"
                   style={{ backgroundColor: classInfo.color }}
                 >
                   {classType === CharacterClass.WARRIOR && '⚔️'}
@@ -71,11 +71,11 @@ export const ClassSelection = ({ onComplete }: ClassSelectionProps) => {
                   {classType === CharacterClass.THIEF && '🗡️'}
                   {classType === CharacterClass.ASSASSIN && '⚡'}
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">{classInfo.name}</h3>
-                <p className="text-sm text-gray-300 mb-2">{classInfo.description}</p>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">{classInfo.name}</h3>
+                <p className="text-xs sm:text-sm text-gray-300 mb-2 line-clamp-2">{classInfo.description}</p>
                 <div className="text-xs text-gray-400">
-                  <p>Évolution: {classInfo.evolution}</p>
-                  <p className="text-yellow-400 mt-1">{classInfo.bonus}</p>
+                  <p className="truncate">Évolution: {classInfo.evolution}</p>
+                  <p className="text-yellow-400 mt-1 truncate">{classInfo.bonus}</p>
                 </div>
               </button>
             );
@@ -84,16 +84,16 @@ export const ClassSelection = ({ onComplete }: ClassSelectionProps) => {
 
         {/* Détails de la classe sélectionnée */}
         {classData && (
-          <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl p-8 border border-purple-500/20 mb-8">
-            <div className="grid md:grid-cols-2 gap-8">
+          <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 lg:p-8 border border-purple-500/20 mb-6 sm:mb-8">
+            <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
               {/* Informations */}
               <div>
-                <h2 className="text-3xl font-bold text-white mb-4" style={{ color: classData.color }}>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4" style={{ color: classData.color }}>
                   {classData.name}
                 </h2>
-                <p className="text-gray-300 mb-4">{classData.description}</p>
+                <p className="text-sm sm:text-base text-gray-300 mb-3 sm:mb-4">{classData.description}</p>
                 
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 text-xs sm:text-sm">
                   <p className="text-gray-400">
                     <span className="font-semibold">Équipement:</span> {classData.equipment.join(', ')}
                   </p>
@@ -108,8 +108,8 @@ export const ClassSelection = ({ onComplete }: ClassSelectionProps) => {
 
               {/* Statistiques */}
               <div>
-                <h3 className="text-xl font-bold text-white mb-4">Statistiques de base</h3>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">Statistiques de base</h3>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
                   <Stat label="HP" value={classData.baseHp} color="#ef4444" />
                   <Stat label="Mana" value={classData.baseMana} color="#3b82f6" />
                   <Stat label="Force" value={classData.baseStrength} color="#f59e0b" />
@@ -123,27 +123,27 @@ export const ClassSelection = ({ onComplete }: ClassSelectionProps) => {
             </div>
 
             {/* Formulaire de création */}
-            <div className="mt-8 pt-8 border-t border-slate-700">
-              <h3 className="text-xl font-bold text-white mb-4">Nommez votre personnage</h3>
-              <div className="flex gap-4">
+            <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-slate-700">
+              <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">Nommez votre personnage</h3>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <input
                   type="text"
                   value={characterName}
                   onChange={(e) => setCharacterName(e.target.value)}
                   placeholder="Nom du personnage"
-                  className="flex-1 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                  className="flex-1 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500 text-sm sm:text-base"
                   maxLength={20}
                 />
                 <button
                   onClick={generateRandomName}
-                  className="px-6 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                  className="px-6 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-sm sm:text-base whitespace-nowrap"
                 >
                   🎲 Aléatoire
                 </button>
                 <button
                   onClick={handleCreateCharacter}
                   disabled={!characterName}
-                  className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                 >
                   Créer
                 </button>
@@ -157,10 +157,10 @@ export const ClassSelection = ({ onComplete }: ClassSelectionProps) => {
 };
 
 const Stat = ({ label, value, color }: { label: string; value: number; color: string }) => (
-  <div className="bg-slate-700/50 rounded-lg p-3">
+  <div className="bg-slate-700/50 rounded-lg p-2 sm:p-3">
     <div className="text-gray-400 text-xs mb-1">{label}</div>
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 bg-slate-600 rounded-full overflow-hidden">
+    <div className="flex items-center gap-1 sm:gap-2">
+      <div className="flex-1 h-1.5 sm:h-2 bg-slate-600 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full"
           style={{
@@ -169,7 +169,7 @@ const Stat = ({ label, value, color }: { label: string; value: number; color: st
           }}
         />
       </div>
-      <span className="text-white font-bold">{value}</span>
+      <span className="text-white font-bold text-xs sm:text-sm min-w-[2rem] text-right">{value}</span>
     </div>
   </div>
 );
