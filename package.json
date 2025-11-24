@@ -26,6 +26,7 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "three": "^0.160.1",
+    "three-stdlib": "^2.36.1",
     "uuid": "^13.0.0",
     "zustand": "^4.5.7"
   },
